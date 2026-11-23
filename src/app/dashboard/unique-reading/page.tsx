@@ -1,20 +1,48 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { BookOpen, Sparkles, Filter, CheckCircle2, ArrowRight } from "lucide-react";
-import { getUniqueReadingByLevel } from "@/data/unique-questions";
+import { BookOpen, Sparkles, Filter, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import { CefrLevel } from "@/lib/ai/types";
 import { AiExplainerModal } from "@/components/AiExplainerModal";
 
+interface UniqueReadingQuestion {
+  id: string;
+  questionNumber: number;
+  level: CefrLevel;
+  documentTitle: string;
+  documentContent: string;
+  prompt: string;
+  options: Record<string, string>;
+  correctAnswer: string;
+  explanation?: string;
+  trapAlert?: string;
+}
+
 export default function UniqueReadingPage() {
   const [selectedLevel, setSelectedLevel] = useState<CefrLevel>("B2");
-  const uniqueMap = getUniqueReadingByLevel();
-  const questions = uniqueMap[selectedLevel];
+  const [questions, setQuestions] = useState<UniqueReadingQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeQIndex, setActiveQIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasChecked, setHasChecked] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/questions/unique?skill=reading&level=${selectedLevel}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setQuestions(json.data);
+          setActiveQIndex(0);
+          setSelectedOption(null);
+          setHasChecked(false);
+        }
+      })
+      .catch((err) => console.error("Error loading unique reading questions:", err))
+      .finally(() => setLoading(false));
+  }, [selectedLevel]);
 
   const currentQ = questions[activeQIndex] || questions[0];
   const levels: CefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -24,7 +52,7 @@ export default function UniqueReadingPage() {
       {/* Header */}
       <div className="border-b border-zinc-200 dark:border-zinc-800 pb-6 mb-8">
         <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-mono text-sm font-semibold uppercase tracking-wider mb-2">
-          <Sparkles className="w-4 h-4" /> Banque de Questions Uniques Dédupliquées
+          <Sparkles className="w-4 h-4" /> Banque de Questions Uniques Dédupliquées (PostgreSQL)
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -32,7 +60,7 @@ export default function UniqueReadingPage() {
               Lecture Dédupliquée par Niveau CECRL
             </h1>
             <p className="text-zinc-600 dark:text-zinc-400 mt-1 text-sm sm:text-base max-w-2xl">
-              Filtrez immédiatement par palier CECRL (A1 à C2) et entraînez-vous sur les documents authentiques uniques du TCF Canada.
+              Filtrez immédiatement par palier CECRL (A1 à C2) et entraînez-vous sur les documents authentiques uniques du TCF Canada interrogés en direct depuis la base de données PostgreSQL.
             </p>
           </div>
 
@@ -55,9 +83,6 @@ export default function UniqueReadingPage() {
             key={lvl}
             onClick={() => {
               setSelectedLevel(lvl);
-              setActiveQIndex(0);
-              setSelectedOption(null);
-              setHasChecked(false);
             }}
             className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold transition-all ${
               selectedLevel === lvl
@@ -70,7 +95,12 @@ export default function UniqueReadingPage() {
         ))}
       </div>
 
-      {currentQ ? (
+      {loading ? (
+        <div className="py-24 flex flex-col items-center justify-center gap-3 text-zinc-500">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+          <p className="text-sm font-medium">Chargement des questions uniques {selectedLevel} depuis PostgreSQL...</p>
+        </div>
+      ) : currentQ ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Document Left */}
           <div className="lg:col-span-6 space-y-4">
@@ -78,7 +108,7 @@ export default function UniqueReadingPage() {
               <div>
                 <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3 mb-4">
                   <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                    <BookOpen className="w-4 h-4" /> Document Source
+                    <BookOpen className="w-4 h-4" /> Document Source · ({activeQIndex + 1}/{questions.length})
                   </span>
                   <span className="text-xs font-mono px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
                     Niveau {currentQ.level}

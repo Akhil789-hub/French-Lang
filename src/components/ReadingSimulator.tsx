@@ -12,25 +12,42 @@ import {
   XCircle,
   RotateCcw,
   BookOpen,
+  Loader2,
 } from "lucide-react";
-import { READING_TESTS, TCFReadingQuestion } from "@/data/reading-tests";
+import { TCFReadingTest, TCFReadingQuestion } from "@/data/reading-tests";
 import { AiExplainerModal } from "@/components/AiExplainerModal";
 import { saveTestResult } from "@/lib/storage";
 import { getScoreDetails } from "@/lib/tcf-scoring";
 
 export function ReadingSimulator({ testId }: { testId: string }) {
-  const test = READING_TESTS.find((t) => t.id === testId) || READING_TESTS[0];
-
+  const [test, setTest] = useState<TCFReadingTest | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 minutes
+  const [timeLeft, setTimeLeft] = useState(60 * 60);
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
-  const currentQ: TCFReadingQuestion = test.questions[currentIndex];
+  useEffect(() => {
+    async function loadTest() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/tests/reading?id=${testId}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setTest(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to load reading test from PostgreSQL:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTest();
+  }, [testId]);
 
   useEffect(() => {
-    if (isSubmitted) return;
+    if (isSubmitted || loading) return;
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -42,7 +59,18 @@ export function ReadingSimulator({ testId }: { testId: string }) {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isSubmitted]);
+  }, [isSubmitted, loading]);
+
+  if (loading || !test) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-24 text-center space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
+        <p className="text-sm font-mono text-zinc-500">Chargement du test de lecture depuis PostgreSQL...</p>
+      </div>
+    );
+  }
+
+  const currentQ: TCFReadingQuestion = test.questions[currentIndex] || test.questions[0];
 
   const handleSelectOption = (key: string) => {
     if (isSubmitted) return;
@@ -137,7 +165,7 @@ export function ReadingSimulator({ testId }: { testId: string }) {
         </div>
       </div>
 
-      {/* Results Banner if Submitted */}
+      {/* Results Banner */}
       {isSubmitted && finalScore && (
         <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-900/40 via-purple-900/30 to-blue-900/30 border border-indigo-500/40 mb-8 animate-in fade-in">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -147,7 +175,7 @@ export function ReadingSimulator({ testId }: { testId: string }) {
               </div>
               <div>
                 <div className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-widest">
-                  Résultat Compréhension Écrite
+                  Résultat Compréhension Écrite (PostgreSQL Synchronisé)
                 </div>
                 <h2 className="text-2xl font-serif font-bold text-white">
                   Score : {finalScore.score} / 699 — NCLC {finalScore.nclc} ({finalScore.cefr})
@@ -163,7 +191,6 @@ export function ReadingSimulator({ testId }: { testId: string }) {
 
       {/* Split Pane: Document Left, Question Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Document Column (Left) */}
         <div className="lg:col-span-6 space-y-4">
           <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[460px] flex flex-col justify-between">
             <div>
@@ -203,7 +230,7 @@ export function ReadingSimulator({ testId }: { testId: string }) {
           <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900">
-                QUESTION {currentQ.questionNumber} / 39
+                QUESTION {currentQ.questionNumber} / {test.questions.length}
               </span>
             </div>
 
@@ -211,6 +238,7 @@ export function ReadingSimulator({ testId }: { testId: string }) {
               {currentQ.prompt}
             </h3>
 
+            {/* Options List */}
             <div className="space-y-3">
               {Object.entries(currentQ.options).map(([key, value]) => {
                 const isSelected = selectedAnswers[currentQ.questionNumber] === key;

@@ -1,9 +1,10 @@
 import { Suspense } from "react";
-import { LISTENING_TESTS } from "@/data/listening-tests";
+import { getListeningTestsFromDb } from "@/lib/db";
 import { ListeningSimulator } from "@/components/ListeningSimulator";
 
 export async function generateStaticParams() {
-  return LISTENING_TESTS.map((t) => ({
+  const tests = await getListeningTestsFromDb();
+  return tests.map((t) => ({
     id: t.id,
   }));
 }

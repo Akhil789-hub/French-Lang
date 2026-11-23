@@ -1,21 +1,51 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Headphones, Sparkles, Filter, CheckCircle2, ArrowRight } from "lucide-react";
-import { getUniqueListeningByLevel } from "@/data/unique-questions";
+import { Headphones, Sparkles, Filter, CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import { CefrLevel } from "@/lib/ai/types";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { AiExplainerModal } from "@/components/AiExplainerModal";
 
+interface UniqueListeningQuestion {
+  id: string;
+  questionNumber: number;
+  level: CefrLevel;
+  prompt: string;
+  options: Record<string, string>;
+  correctAnswer: string;
+  frenchTranscript: string;
+  englishTranslation?: string;
+  trapAlert?: string;
+  explanation?: string;
+  keySentence?: string;
+  category?: string;
+}
+
 export default function UniqueListeningPage() {
   const [selectedLevel, setSelectedLevel] = useState<CefrLevel>("B2");
-  const uniqueMap = getUniqueListeningByLevel();
-  const questions = uniqueMap[selectedLevel];
+  const [questions, setQuestions] = useState<UniqueListeningQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeQIndex, setActiveQIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasChecked, setHasChecked] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/questions/unique?skill=listening&level=${selectedLevel}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setQuestions(json.data);
+          setActiveQIndex(0);
+          setSelectedOption(null);
+          setHasChecked(false);
+        }
+      })
+      .catch((err) => console.error("Error loading unique listening questions:", err))
+      .finally(() => setLoading(false));
+  }, [selectedLevel]);
 
   const currentQ = questions[activeQIndex] || questions[0];
 
@@ -26,7 +56,7 @@ export default function UniqueListeningPage() {
       {/* Header */}
       <div className="border-b border-zinc-200 dark:border-zinc-800 pb-6 mb-8">
         <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-mono text-sm font-semibold uppercase tracking-wider mb-2">
-          <Sparkles className="w-4 h-4" /> Banque de Questions Uniques Dédupliquées
+          <Sparkles className="w-4 h-4" /> Banque de Questions Uniques Dédupliquées (PostgreSQL)
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -34,7 +64,7 @@ export default function UniqueListeningPage() {
               Écoute Dédupliquée par Niveau CECRL
             </h1>
             <p className="text-zinc-600 dark:text-zinc-400 mt-1 text-sm sm:text-base max-w-2xl">
-              Le TCF recycle fréquemment les questions d'une session à l'autre. Entraînez-vous uniquement sur les questions uniques classées de A1 à C2. Zéro temps perdu.
+              Le TCF recycle fréquemment les questions d'une session à l'autre. Entraînez-vous uniquement sur les questions uniques classées de A1 à C2 issues de notre base de données PostgreSQL. Zéro temps perdu.
             </p>
           </div>
 
@@ -57,9 +87,6 @@ export default function UniqueListeningPage() {
             key={lvl}
             onClick={() => {
               setSelectedLevel(lvl);
-              setActiveQIndex(0);
-              setSelectedOption(null);
-              setHasChecked(false);
             }}
             className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-mono font-bold transition-all ${
               selectedLevel === lvl
@@ -72,8 +99,13 @@ export default function UniqueListeningPage() {
         ))}
       </div>
 
-      {/* Question Card */}
-      {currentQ ? (
+      {/* Loading state or Question Card */}
+      {loading ? (
+        <div className="py-24 flex flex-col items-center justify-center gap-3 text-zinc-500">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <p className="text-sm font-medium">Chargement des questions uniques {selectedLevel} depuis PostgreSQL...</p>
+        </div>
+      ) : currentQ ? (
         <div className="max-w-3xl mx-auto space-y-6">
           <AudioPlayer
             speechText={currentQ.frenchTranscript}
@@ -83,7 +115,7 @@ export default function UniqueListeningPage() {
           <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
-                QUESTION DÉDUPLIQUÉE · NIVEAU {currentQ.level}
+                QUESTION DÉDUPLIQUÉE · NIVEAU {currentQ.level} · ({activeQIndex + 1}/{questions.length})
               </span>
               <button
                 onClick={() => setAiModalOpen(true)}

@@ -22,7 +22,6 @@ const STORAGE_KEYS = {
   READING_RESULTS: "tcf_reading_results_v1",
   WRITING_RESULTS: "tcf_writing_results_v1",
   SPEAKING_RESULTS: "tcf_speaking_results_v1",
-  MANUAL_MARKS: "tcf_manual_marks_v1",
 };
 
 function getStorageSafe<T>(key: string, defaultValue: T): T {
@@ -65,8 +64,30 @@ export function saveTestResult(
     completedAt: new Date().toISOString(),
   };
 
-  const updated = [attempt, ...existing].slice(0, 50); // Keep last 50 attempts
+  const updated = [attempt, ...existing].slice(0, 50);
   setStorageSafe(key, updated);
+
+  // Sync to PostgreSQL backend asynchronously
+  if (typeof window !== "undefined") {
+    fetch("/api/attempts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        testId: data.testId,
+        skill,
+        testNumber: data.testNumber,
+        score: data.score,
+        nclcLevel: data.nclcLevel,
+        cefrLevel: data.cefrLevel,
+        totalQuestions: data.totalQuestions,
+        correctCount: data.correctCount,
+        wrongCount: data.wrongCount,
+        skippedCount: data.skippedCount,
+        answers: data.answers,
+      }),
+    }).catch((err) => console.error("PostgreSQL sync error:", err));
+  }
+
   return attempt;
 }
 
@@ -83,14 +104,6 @@ export function getTestResults(
       : STORAGE_KEYS.SPEAKING_RESULTS;
 
   return getStorageSafe<StoredTestAttempt[]>(key, []);
-}
-
-export function getLastResultForTest(
-  skill: "listening" | "reading" | "writing" | "speaking",
-  testId: string
-): StoredTestAttempt | null {
-  const results = getTestResults(skill);
-  return results.find((r) => r.testId === testId) || null;
 }
 
 export function getOverallStats() {

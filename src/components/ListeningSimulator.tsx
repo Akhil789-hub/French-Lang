@@ -14,27 +14,45 @@ import {
   CheckCircle2,
   XCircle,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
-import { LISTENING_TESTS, TCFQuestion } from "@/data/listening-tests";
+import { TCFListeningTest, TCFQuestion } from "@/data/listening-tests";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { AiExplainerModal } from "@/components/AiExplainerModal";
 import { saveTestResult } from "@/lib/storage";
 import { getScoreDetails } from "@/lib/tcf-scoring";
 
 export function ListeningSimulator({ testId }: { testId: string }) {
-  const test = LISTENING_TESTS.find((t) => t.id === testId) || LISTENING_TESTS[0];
-
+  const [test, setTest] = useState<TCFListeningTest | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(35 * 60); // 35 minutes
+  const [timeLeft, setTimeLeft] = useState(35 * 60);
   const [showTranscript, setShowTranscript] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
-  const currentQ: TCFQuestion = test.questions[currentIndex];
+  // Load from PostgreSQL backend
+  useEffect(() => {
+    async function loadTest() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/tests/listening?id=${testId}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setTest(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to load test from PostgreSQL:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTest();
+  }, [testId]);
 
   useEffect(() => {
-    if (isSubmitted) return;
+    if (isSubmitted || loading) return;
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -46,7 +64,18 @@ export function ListeningSimulator({ testId }: { testId: string }) {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isSubmitted]);
+  }, [isSubmitted, loading]);
+
+  if (loading || !test) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-24 text-center space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
+        <p className="text-sm font-mono text-zinc-500">Chargement du test depuis Supabase PostgreSQL...</p>
+      </div>
+    );
+  }
+
+  const currentQ: TCFQuestion = test.questions[currentIndex] || test.questions[0];
 
   const handleSelectOption = (key: string) => {
     if (isSubmitted) return;
@@ -142,7 +171,7 @@ export function ListeningSimulator({ testId }: { testId: string }) {
         </div>
       </div>
 
-      {/* Results Banner if Submitted */}
+      {/* Results Banner */}
       {isSubmitted && finalScore && (
         <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-purple-900/30 border border-blue-500/40 mb-8 animate-in fade-in">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -152,7 +181,7 @@ export function ListeningSimulator({ testId }: { testId: string }) {
               </div>
               <div>
                 <div className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-                  Résultats Officiels Simulés
+                  Résultats Enregistrés sur PostgreSQL
                 </div>
                 <h2 className="text-2xl font-serif font-bold text-white">
                   Score : {finalScore.score} / 699 — NCLC {finalScore.nclc} ({finalScore.cefr})
@@ -177,7 +206,6 @@ export function ListeningSimulator({ testId }: { testId: string }) {
 
       {/* Main Grid: Question Left, Navigator Right */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Player & Question */}
         <div className="lg:col-span-2 space-y-6">
           <AudioPlayer
             speechText={currentQ.frenchTranscript}
@@ -187,7 +215,7 @@ export function ListeningSimulator({ testId }: { testId: string }) {
           <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
-                QUESTION {currentQ.questionNumber} / 39
+                QUESTION {currentQ.questionNumber} / {test.questions.length}
               </span>
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
                 Niveau {currentQ.level}
@@ -301,7 +329,7 @@ export function ListeningSimulator({ testId }: { testId: string }) {
         <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm sticky top-24">
             <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-              Grille des 39 Questions
+              Grille des Questions
             </h4>
 
             <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
@@ -346,12 +374,12 @@ export function ListeningSimulator({ testId }: { testId: string }) {
               <div className="flex items-center justify-between">
                 <span>Questions répondues :</span>
                 <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">
-                  {Object.keys(selectedAnswers).length} / 39
+                  {Object.keys(selectedAnswers).length} / {test.questions.length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Palier recommandé NCLC 7 :</span>
-                <span className="font-mono font-bold text-emerald-600">24+ correctes</span>
+                <span>Base de données :</span>
+                <span className="font-mono font-bold text-emerald-600">PostgreSQL Connecté</span>
               </div>
             </div>
           </div>

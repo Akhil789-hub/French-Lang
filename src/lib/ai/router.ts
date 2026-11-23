@@ -4,6 +4,7 @@ import { GeminiProvider } from "./providers/gemini";
 import { CerebrasProvider } from "./providers/cerebras";
 import { MistralProvider } from "./providers/mistral";
 import { OpenRouterProvider } from "./providers/openrouter";
+import { PollinationsProvider } from "./providers/pollinations";
 import { MockProvider } from "./providers/mock";
 import {
   AiChatMessage,
@@ -24,7 +25,8 @@ export class AiRouter {
       new CerebrasProvider(),
       new MistralProvider(),
       new OpenRouterProvider(),
-      new MockProvider(), // Guaranteed safety fallback
+      new PollinationsProvider(), // Live free cloud AI (No API key needed)
+      new MockProvider(),         // Offline safety net
     ];
   }
 
