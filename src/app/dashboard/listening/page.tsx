@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Headphones, CheckCircle2, ChevronRight, Clock, Loader2 } from "lucide-react";
 import { getTestResults, StoredTestAttempt } from "@/lib/storage";
+import { ModeSelectionModal } from "@/components/ModeSelectionModal";
 
 interface ListeningTestItem {
   id: string;
@@ -17,6 +18,7 @@ export default function ListeningCatalogPage() {
   const [tests, setTests] = useState<ListeningTestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [attempts, setAttempts] = useState<Record<string, StoredTestAttempt>>({});
+  const [modalTest, setModalTest] = useState<ListeningTestItem | null>(null);
 
   useEffect(() => {
     // 1. Fetch tests from PostgreSQL via API
@@ -53,7 +55,7 @@ export default function ListeningCatalogPage() {
             40 Tests Complets d'Écoute TCF Canada
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400 mt-2 max-w-2xl text-sm sm:text-base">
-            Chaque test comporte 39 questions (A1 à C2). Après avoir répondu : transcription intégrale en français et anglais, phrase clé repère et explication détaillée du piège officiel.
+            Chaque test comporte 39 questions (A1 à C2). Choisissez entre le <strong>Mode Examen</strong> (35 min chronométré) et le <strong>Mode Révision</strong> (sans minuteur, corrections et pièges immédiats).
           </p>
         </div>
 
@@ -80,12 +82,12 @@ export default function ListeningCatalogPage() {
             const isDone = Boolean(attempt);
 
             return (
-              <Link
+              <button
                 key={test.id}
-                href={`/dashboard/listening/${test.id}`}
-                className="group relative flex flex-col justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/50 hover:shadow-lg dark:hover:border-blue-500/50 transition-all duration-200"
+                onClick={() => setModalTest(test)}
+                className="group relative flex flex-col justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-blue-500/50 hover:shadow-lg dark:hover:border-blue-500/50 transition-all duration-200 text-left cursor-pointer"
               >
-                <div>
+                <div className="w-full">
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">
                       TEST #{test.testNumber}
@@ -110,14 +112,27 @@ export default function ListeningCatalogPage() {
                   </p>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400">
-                  <span>{isDone ? "Reprendre le test" : "Commencer le test"}</span>
+                <div className="mt-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400 w-full">
+                  <span>{isDone ? "Choisir le mode (Rejouer)" : "Choisir le mode (Lancer)"}</span>
                   <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>
+      )}
+
+      {/* Mode Selection Modal */}
+      {modalTest && (
+        <ModeSelectionModal
+          isOpen={Boolean(modalTest)}
+          onClose={() => setModalTest(null)}
+          testId={modalTest.id}
+          testNumber={modalTest.testNumber}
+          testType="listening"
+          durationMinutes={modalTest.durationMinutes || 35}
+          totalQuestions={modalTest.totalQuestions || 39}
+        />
       )}
     </div>
   );

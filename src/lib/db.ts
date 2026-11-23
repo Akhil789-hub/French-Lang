@@ -177,6 +177,7 @@ export async function getSpeakingTopicsFromDb(): Promise<TCFSpeakingTopic[]> {
     id: t.id,
     taskNumber: t.task_number as 1 | 2 | 3,
     title: t.title,
+    category: t.category || "Général",
     prepTimeSeconds: t.prep_time_seconds,
     speakingTimeSeconds: t.speaking_time_seconds,
     prompt: t.prompt,

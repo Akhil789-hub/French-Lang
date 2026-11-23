@@ -20,10 +20,11 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#FCFCFD] dark:bg-[#080E1A] text-zinc-900 dark:text-zinc-100 transition-colors">
       {/* Top Academic Banner */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-900 to-slate-950 text-white text-[11px] font-mono py-2.5 text-center px-4 font-bold tracking-wider uppercase border-b border-blue-900/50 flex items-center justify-center gap-2">
+      <div className="bg-gradient-to-r from-blue-700 via-blue-900 to-slate-950 text-white text-[10px] sm:text-xs font-mono py-2 sm:py-2.5 text-center px-3 sm:px-4 font-bold tracking-wider uppercase border-b border-blue-900/50 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
         <span>🇨🇦 LF ACADEMY</span>
         <span className="opacity-40">|</span>
-        <span>OBJECTIF NCLC 7+ & BONUS EXPRESS ENTRY (+50 CRS)</span>
+        <span className="hidden sm:inline">OBJECTIF NCLC 7+ & BONUS EXPRESS ENTRY (+50 CRS)</span>
+        <span className="sm:hidden">NCLC 7+ (+50 CRS)</span>
         <span className="opacity-40">|</span>
         <span className="text-emerald-400">100% GRATUIT</span>
       </div>

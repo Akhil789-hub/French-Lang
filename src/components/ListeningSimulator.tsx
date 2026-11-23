@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,6 +16,8 @@ import {
   XCircle,
   RotateCcw,
   Loader2,
+  Flag,
+  BookOpen,
 } from "lucide-react";
 import { TCFListeningTest, TCFQuestion } from "@/data/listening-tests";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -24,13 +27,18 @@ import { getScoreDetails } from "@/lib/tcf-scoring";
 import { saveMistake } from "@/lib/mistakes";
 
 export function ListeningSimulator({ testId }: { testId: string }) {
+  const searchParams = useSearchParams();
+  const mode = (searchParams.get("mode") || "exam") as "exam" | "review";
+  const isReviewMode = mode === "review";
+
   const [test, setTest] = useState<TCFListeningTest | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Record<number, boolean>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(35 * 60);
-  const [showTranscript, setShowTranscript] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(isReviewMode);
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
   // Load from PostgreSQL backend
@@ -52,8 +60,9 @@ export function ListeningSimulator({ testId }: { testId: string }) {
     loadTest();
   }, [testId]);
 
+  // Timer only active in Exam mode
   useEffect(() => {
-    if (isSubmitted || loading) return;
+    if (isReviewMode || isSubmitted || loading) return;
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -65,7 +74,7 @@ export function ListeningSimulator({ testId }: { testId: string }) {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isSubmitted, loading]);
+  }, [isReviewMode, isSubmitted, loading]);
 
   if (loading || !test) {
     return (
@@ -166,10 +175,17 @@ export function ListeningSimulator({ testId }: { testId: string }) {
         </Link>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm font-mono font-bold px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
-            <Clock className="w-4 h-4 text-blue-500" />
-            <span>{formatTimer(timeLeft)}</span>
-          </div>
+          {isReviewMode ? (
+            <div className="flex items-center gap-2 text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+              <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+              <span>Mode Révision · Temps Libre</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm font-mono font-bold px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
+              <Clock className="w-4 h-4 text-amber-500" />
+              <span>{formatTimer(timeLeft)}</span>
+            </div>
+          )}
 
           {!isSubmitted ? (
             <button
@@ -236,12 +252,33 @@ export function ListeningSimulator({ testId }: { testId: string }) {
 
           <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
-                QUESTION {currentQ.questionNumber} / {test.questions.length}
-              </span>
-              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-                Niveau {currentQ.level}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
+                  QUESTION {currentQ.questionNumber} / {test.questions.length}
+                </span>
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                  Niveau {currentQ.level}
+                </span>
+              </div>
+
+              {!isReviewMode && !isSubmitted && (
+                <button
+                  onClick={() => {
+                    setFlaggedQuestions((prev) => ({
+                      ...prev,
+                      [currentQ.questionNumber]: !prev[currentQ.questionNumber],
+                    }));
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition ${
+                    flaggedQuestions[currentQ.questionNumber]
+                      ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800"
+                      : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  <Flag className="w-3.5 h-3.5" />
+                  <span>{flaggedQuestions[currentQ.questionNumber] ? "Marquée pour révision" : "Marquer"}</span>
+                </button>
+              )}
             </div>
 
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
@@ -252,15 +289,17 @@ export function ListeningSimulator({ testId }: { testId: string }) {
               {Object.entries(currentQ.options).map(([key, value]) => {
                 const isSelected = selectedAnswers[currentQ.questionNumber] === key;
                 const isCorrect = currentQ.correctAnswer === key;
+                const isAnsweredInReview = isReviewMode && Boolean(selectedAnswers[currentQ.questionNumber]);
+                const isRevealed = isSubmitted || isAnsweredInReview;
 
                 let optionStyle =
                   "border-zinc-200 dark:border-zinc-800 hover:border-blue-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50";
 
-                if (isSelected && !isSubmitted) {
+                if (isSelected && !isRevealed) {
                   optionStyle = "border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 font-semibold ring-2 ring-blue-500/20";
                 }
 
-                if (isSubmitted) {
+                if (isRevealed) {
                   if (isCorrect) {
                     optionStyle = "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-200 font-bold ring-2 ring-emerald-500/20";
                   } else if (isSelected && !isCorrect) {
@@ -282,8 +321,8 @@ export function ListeningSimulator({ testId }: { testId: string }) {
                       <span className="text-sm">{value}</span>
                     </div>
 
-                    {isSubmitted && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-                    {isSubmitted && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-red-600" />}
+                    {isRevealed && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                    {isRevealed && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-red-600" />}
                   </button>
                 );
               })}
@@ -315,7 +354,7 @@ export function ListeningSimulator({ testId }: { testId: string }) {
             </div>
           </div>
 
-          {(isSubmitted || showTranscript) && (
+          {(isSubmitted || showTranscript || (isReviewMode && Boolean(selectedAnswers[currentQ.questionNumber]))) && (
             <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-4 animate-in fade-in">
               <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
                 <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
@@ -350,20 +389,30 @@ export function ListeningSimulator({ testId }: { testId: string }) {
         {/* Right Column: Question Matrix Navigation */}
         <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm sticky top-24">
-            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-              Grille des Questions
-            </h4>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                Grille des Questions
+              </h4>
+              <span className="text-xs font-mono font-bold text-zinc-400">
+                {Object.keys(selectedAnswers).length} / {test.questions.length}
+              </span>
+            </div>
 
             <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
               {test.questions.map((q, idx) => {
                 const isSelected = selectedAnswers[q.questionNumber];
                 const isCurrent = idx === currentIndex;
                 const isCorrect = selectedAnswers[q.questionNumber] === q.correctAnswer;
+                const isFlagged = flaggedQuestions[q.questionNumber];
 
                 let btnStyle = "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200";
 
-                if (isSelected && !isSubmitted) {
+                if (isSelected && !isSubmitted && !isReviewMode) {
                   btnStyle = "bg-blue-600 text-white font-bold";
+                }
+
+                if (isReviewMode && isSelected) {
+                  btnStyle = isCorrect ? "bg-emerald-600 text-white font-bold" : "bg-red-600 text-white font-bold";
                 }
 
                 if (isSubmitted) {
@@ -377,16 +426,19 @@ export function ListeningSimulator({ testId }: { testId: string }) {
                 }
 
                 if (isCurrent) {
-                  btnStyle += " ring-2 ring-offset-2 ring-blue-500";
+                  btnStyle += " ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-zinc-900";
                 }
 
                 return (
                   <button
-                    key={q.id}
+                    key={q.questionNumber}
                     onClick={() => setCurrentIndex(idx)}
-                    className={`h-9 rounded-lg text-xs font-mono font-medium transition-all ${btnStyle}`}
+                    className={`relative h-9 rounded-lg text-xs font-mono transition-all flex items-center justify-center ${btnStyle}`}
                   >
-                    {q.questionNumber}
+                    <span>{q.questionNumber}</span>
+                    {isFlagged && !isSubmitted && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white dark:border-zinc-900" />
+                    )}
                   </button>
                 );
               })}

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, CheckCircle2, ChevronRight, Clock, Loader2 } from "lucide-react";
 import { getTestResults, StoredTestAttempt } from "@/lib/storage";
+import { ModeSelectionModal } from "@/components/ModeSelectionModal";
 
 interface ReadingTestItem {
   id: string;
@@ -17,6 +18,7 @@ export default function ReadingCatalogPage() {
   const [tests, setTests] = useState<ReadingTestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [attempts, setAttempts] = useState<Record<string, StoredTestAttempt>>({});
+  const [modalTest, setModalTest] = useState<ReadingTestItem | null>(null);
 
   useEffect(() => {
     // 1. Fetch tests from PostgreSQL via API
@@ -53,7 +55,7 @@ export default function ReadingCatalogPage() {
             40 Tests Complets de Lecture TCF Canada
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400 mt-2 max-w-2xl text-sm sm:text-base">
-            60 minutes par épreuve. 39 questions progressives allant des annonces quotidiennes aux essais sociologiques et littéraires de niveau C2. Même moteur d'explication pédagogique pour chaque question.
+            60 minutes par épreuve. 39 questions progressives de A1 à C2. Choisissez entre le <strong>Mode Examen</strong> (60 min chronométré) et le <strong>Mode Révision</strong> (sans chrono, explications immédiates).
           </p>
         </div>
 
@@ -80,12 +82,12 @@ export default function ReadingCatalogPage() {
             const isDone = Boolean(attempt);
 
             return (
-              <Link
+              <button
                 key={test.id}
-                href={`/dashboard/reading/${test.id}`}
-                className="group relative flex flex-col justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-500/50 hover:shadow-lg dark:hover:border-indigo-500/50 transition-all duration-200"
+                onClick={() => setModalTest(test)}
+                className="group relative flex flex-col justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-500/50 hover:shadow-lg dark:hover:border-indigo-500/50 transition-all duration-200 text-left cursor-pointer"
               >
-                <div>
+                <div className="w-full">
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">
                       TEST #{test.testNumber}
@@ -110,14 +112,27 @@ export default function ReadingCatalogPage() {
                   </p>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                  <span>{isDone ? "Reprendre le test" : "Commencer le test"}</span>
+                <div className="mt-5 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-indigo-600 dark:text-indigo-400 w-full">
+                  <span>{isDone ? "Choisir le mode (Rejouer)" : "Choisir le mode (Lancer)"}</span>
                   <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>
+      )}
+
+      {/* Mode Selection Modal */}
+      {modalTest && (
+        <ModeSelectionModal
+          isOpen={Boolean(modalTest)}
+          onClose={() => setModalTest(null)}
+          testId={modalTest.id}
+          testNumber={modalTest.testNumber}
+          testType="reading"
+          durationMinutes={modalTest.durationMinutes || 60}
+          totalQuestions={modalTest.totalQuestions || 39}
+        />
       )}
     </div>
   );
