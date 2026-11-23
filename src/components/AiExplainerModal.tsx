@@ -11,6 +11,7 @@ interface AiExplainerModalProps {
   questionPrompt: string;
   options: Record<string, string>;
   correctKey: string;
+  userSelectedKey?: string;
   transcriptOrContext?: string;
   preloadedExplanation?: string;
   preloadedTrapAlert?: string;
@@ -24,6 +25,7 @@ export function AiExplainerModal({
   questionPrompt,
   options,
   correctKey,
+  userSelectedKey,
   transcriptOrContext,
   preloadedExplanation,
   preloadedTrapAlert,

@@ -18,6 +18,7 @@ import { TCFReadingTest, TCFReadingQuestion } from "@/data/reading-tests";
 import { AiExplainerModal } from "@/components/AiExplainerModal";
 import { saveTestResult } from "@/lib/storage";
 import { getScoreDetails } from "@/lib/tcf-scoring";
+import { saveMistake } from "@/lib/mistakes";
 
 export function ReadingSimulator({ testId }: { testId: string }) {
   const [test, setTest] = useState<TCFReadingTest | null>(null);
@@ -104,6 +105,27 @@ export function ReadingSimulator({ testId }: { testId: string }) {
   const handleSubmitTest = () => {
     setIsSubmitted(true);
     const scoreData = calculateScore();
+
+    // Auto-save any incorrect questions to personal Mistake Vault
+    test.questions.forEach((q) => {
+      const userAns = selectedAnswers[q.questionNumber];
+      if (userAns && userAns !== q.correctAnswer) {
+        saveMistake({
+          skill: "reading",
+          testId: test.id,
+          questionNumber: q.questionNumber,
+          level: q.level,
+          prompt: q.prompt,
+          options: q.options,
+          selectedAnswer: userAns,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          trapAlert: q.trapAlert,
+          contextText: q.documentContent,
+        });
+      }
+    });
+
     saveTestResult("reading", {
       testId: test.id,
       testNumber: test.testNumber,

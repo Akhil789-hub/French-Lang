@@ -21,6 +21,7 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { AiExplainerModal } from "@/components/AiExplainerModal";
 import { saveTestResult } from "@/lib/storage";
 import { getScoreDetails } from "@/lib/tcf-scoring";
+import { saveMistake } from "@/lib/mistakes";
 
 export function ListeningSimulator({ testId }: { testId: string }) {
   const [test, setTest] = useState<TCFListeningTest | null>(null);
@@ -110,6 +111,27 @@ export function ListeningSimulator({ testId }: { testId: string }) {
     setIsSubmitted(true);
     setShowTranscript(true);
     const scoreData = calculateScore();
+
+    // Auto-save any incorrect questions to personal Mistake Vault
+    test.questions.forEach((q) => {
+      const userAns = selectedAnswers[q.questionNumber];
+      if (userAns && userAns !== q.correctAnswer) {
+        saveMistake({
+          skill: "listening",
+          testId: test.id,
+          questionNumber: q.questionNumber,
+          level: q.level,
+          prompt: q.prompt,
+          options: q.options,
+          selectedAnswer: userAns,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          trapAlert: q.trapAlert,
+          contextText: q.frenchTranscript,
+        });
+      }
+    });
+
     saveTestResult("listening", {
       testId: test.id,
       testNumber: test.testNumber,

@@ -15,9 +15,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "fuck-tcf: Free TCF Canada Test Prep & Multi-Model AI",
+  title: "LF Academy | Learn French & TCF/TEF Canada Immigration Platform",
   description:
-    "Free TCF Canada practice tests. 40 full listening, reading, and writing tests with audio, transcriptions, translations, and explanations. Unlimited retries powered by multi-model free AI routing.",
+    "Académie d'excellence pour le français et l'immigration canadienne (Entrée Express NCLC 7+). 40 tests complets d'écoute et de lecture, 113 sujets d'expression écrite et simulation orale avec IA illimitée et carnet d'erreurs personnalisé.",
+  keywords: [
+    "LF Academy",
+    "Learn French",
+    "TCF Canada",
+    "TEF Canada",
+    "Entrée Express",
+    "NCLC 7",
+    "Immigration Canada",
+    "Compréhension Orale",
+    "Compréhension Écrite",
+  ],
 };
 
 export default function RootLayout({
