@@ -29,6 +29,7 @@ import {
 import { TCFSpeakingTopic } from "@/data/speaking-topics";
 import { TCFEvaluationResult } from "@/lib/ai/types";
 import { saveTestResult } from "@/lib/storage";
+import { TcfRulesModal } from "@/components/TcfRulesModal";
 
 export default function SpeakingStudioPage() {
   const [topics, setTopics] = useState<TCFSpeakingTopic[]>([]);
@@ -42,6 +43,7 @@ export default function SpeakingStudioPage() {
   // Selected Situation & Practice Mode
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [practiceMode, setPracticeMode] = useState<"exam" | "review">("exam");
+  const [rulesModalOpen, setRulesModalOpen] = useState(false);
 
   // Prep Timer state (for 2-min Task 2 prep)
   const [prepSecondsRemaining, setPrepSecondsRemaining] = useState(120);
@@ -367,28 +369,37 @@ export default function SpeakingStudioPage() {
               </div>
             </div>
 
-            {/* Mode Switcher */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-200/70 dark:bg-zinc-800 border border-zinc-300/80 dark:border-zinc-700 text-xs font-bold">
+            {/* Mode Switcher & Rules Button */}
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={() => setPracticeMode("exam")}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  practiceMode === "exam"
-                    ? "bg-rose-600 text-white shadow-sm"
-                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-                }`}
+                onClick={() => setRulesModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 transition"
               >
-                ⏱️ Mode Examen
+                📋 Règles (12-15m)
               </button>
-              <button
-                onClick={() => setPracticeMode("review")}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  practiceMode === "review"
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-                }`}
-              >
-                📖 Mode Révision / Pratique
-              </button>
+
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-200/70 dark:bg-zinc-800 border border-zinc-300/80 dark:border-zinc-700 text-xs font-bold">
+                <button
+                  onClick={() => setPracticeMode("exam")}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    practiceMode === "exam"
+                      ? "bg-rose-600 text-white shadow-sm"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  }`}
+                >
+                  ⏱️ Mode Examen
+                </button>
+                <button
+                  onClick={() => setPracticeMode("review")}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    practiceMode === "review"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  }`}
+                >
+                  📖 Mode Révision / Pratique
+                </button>
+              </div>
             </div>
           </div>
 
@@ -908,6 +919,12 @@ export default function SpeakingStudioPage() {
           )}
         </div>
       )}
+
+      <TcfRulesModal
+        isOpen={rulesModalOpen}
+        onClose={() => setRulesModalOpen(false)}
+        defaultModule="speaking"
+      />
     </div>
   );
 }

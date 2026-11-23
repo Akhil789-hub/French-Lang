@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Target,
+  Clock,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Logo } from "@/components/brand/Logo";
@@ -33,7 +34,8 @@ export function Navbar() {
     { href: "/dashboard/listening", label: "Écoute", fullLabel: "Compréhension Orale (40 tests)", icon: Headphones },
     { href: "/dashboard/reading", label: "Lecture", fullLabel: "Compréhension Écrite (40 tests)", icon: BookOpen },
     { href: "/dashboard/writing", label: "Écriture", fullLabel: "Expression Écrite (113 sujets)", icon: PenTool },
-    { href: "/dashboard/speaking", label: "Oral", fullLabel: "Expression Orale (Whisper STT)", icon: Mic },
+    { href: "/dashboard/speaking", label: "Oral", fullLabel: "Expression Orale (Situations T2 & T3)", icon: Mic },
+    { href: "/dashboard/guidelines", label: "Guide TCF", fullLabel: "Règles & Format Officiel (2h47)", icon: Clock },
     { href: "/dashboard/unique-listening", label: "Banque A1-C2", fullLabel: "Questions Dédupliquées", icon: Sparkles },
     { href: "/dashboard/mistakes", label: "Carnet", fullLabel: "Mon Carnet d'Erreurs", icon: BookmarkCheck },
   ];

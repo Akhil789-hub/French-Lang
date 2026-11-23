@@ -18,7 +18,9 @@ import {
   Timer,
   Lock,
   Unlock,
+  Info,
 } from "lucide-react";
+import { TcfRulesModal } from "@/components/TcfRulesModal";
 import { TCFWritingTopic } from "@/data/writing-topics";
 import { TCFEvaluationResult } from "@/lib/ai/types";
 import { saveTestResult } from "@/lib/storage";
@@ -37,9 +39,11 @@ export default function WritingStudioPage() {
 
   // Exam vs Review Mode
   const [writingMode, setWritingMode] = useState<"exam" | "review">("exam");
-  // Timer state for exam mode (20 min = 1200s per task)
+  const [examDurationType, setExamDurationType] = useState<"task" | "full">("task");
+  // Timer state for exam mode (20 min = 1200s, 60 min = 3600s)
   const [timeRemainingSeconds, setTimeRemainingSeconds] = useState(1200);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch topics from PostgreSQL backend
@@ -212,35 +216,60 @@ export default function WritingStudioPage() {
           ))}
         </div>
 
-        {/* Mode Selector */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-bold shrink-0 self-start md:self-auto">
+        {/* Mode Selector & Rules */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0 self-start md:self-auto">
           <button
-            onClick={() => {
-              setWritingMode("exam");
-              setTimeRemainingSeconds(1200);
-              setIsTimerRunning(false);
-            }}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              writingMode === "exam"
-                ? "bg-rose-600 text-white shadow-sm"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-            }`}
+            onClick={() => setRulesModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 transition"
           >
-            ⏱️ Mode Examen (20 min)
+            📋 Règles (60 min · 3 tâches)
           </button>
-          <button
-            onClick={() => {
-              setWritingMode("review");
-              setIsTimerRunning(false);
-            }}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              writingMode === "review"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-            }`}
-          >
-            📖 Mode Révision (Illimité)
-          </button>
+
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-bold">
+            <button
+              onClick={() => {
+                setWritingMode("exam");
+                setExamDurationType("task");
+                setTimeRemainingSeconds(1200);
+                setIsTimerRunning(false);
+              }}
+              className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                writingMode === "exam" && examDurationType === "task"
+                  ? "bg-rose-600 text-white shadow-sm"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              }`}
+            >
+              ⏱️ 20 min
+            </button>
+            <button
+              onClick={() => {
+                setWritingMode("exam");
+                setExamDurationType("full");
+                setTimeRemainingSeconds(3600);
+                setIsTimerRunning(false);
+              }}
+              className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                writingMode === "exam" && examDurationType === "full"
+                  ? "bg-rose-600 text-white shadow-sm"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              }`}
+            >
+              ⏱️ 60 min (Session Complète)
+            </button>
+            <button
+              onClick={() => {
+                setWritingMode("review");
+                setIsTimerRunning(false);
+              }}
+              className={`px-2.5 py-1.5 rounded-lg transition-all ${
+                writingMode === "review"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              }`}
+            >
+              📖 Révision (Illimité)
+            </button>
+          </div>
         </div>
       </div>
 
@@ -513,6 +542,12 @@ export default function WritingStudioPage() {
           </div>
         </div>
       ) : null}
+
+      <TcfRulesModal
+        isOpen={rulesModalOpen}
+        onClose={() => setRulesModalOpen(false)}
+        defaultModule="writing"
+      />
     </div>
   );
 }

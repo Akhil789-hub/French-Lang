@@ -201,6 +201,43 @@ export default function DashboardOverviewPage() {
         </div>
       )}
 
+      {/* Full 2h47 Mock Exam & Guidelines Banner */}
+      <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-950 text-white border border-blue-800/50 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="space-y-2 max-w-2xl">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 uppercase">
+              Format Officiel TCF Canada · 2h 47 min
+            </span>
+            <span className="text-zinc-400 text-xs hidden sm:inline">|</span>
+            <span className="text-emerald-400 font-mono text-xs hidden sm:inline font-bold">
+              Objectif NCLC 7+ (+50 CRS)
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-tight">
+            Grand Examen Blanc & Guide Officiel
+          </h2>
+          <p className="text-xs sm:text-sm text-zinc-300 font-serif leading-relaxed">
+            Passez l'épreuve complète en conditions officielles (Écoute 35m · Lecture 60m · Écriture 60m · Oral 15m) ou consultez le référentiel des 4 épreuves avec les barèmes officiels.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <Link
+            href="/dashboard/guidelines"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition active:scale-95"
+          >
+            📋 Guide & Barème (2h47)
+          </Link>
+          <Link
+            href="/dashboard/mock-exam"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition active:scale-95"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Lancer la Simulation (2h47)</span>
+          </Link>
+        </div>
+      </div>
+
       {/* 4 Skill Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Listening Card */}
@@ -218,14 +255,14 @@ export default function DashboardOverviewPage() {
               Compréhension Orale
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
-              40 tests complets · Audio & transcriptions intégrales
+              35 min · 39 questions QCM · 0 à 699 pts
             </p>
           </div>
           <Link
             href="/dashboard/listening"
             className="mt-6 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-blue-600 hover:text-blue-700"
           >
-            <span>Catalogue des 40 tests</span>
+            <span>40 tests · Mode Examen & Révision</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -245,14 +282,14 @@ export default function DashboardOverviewPage() {
               Compréhension Écrite
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
-              40 tests de lecture · Documents officiels A1 à C2
+              60 min · 39 questions QCM · 0 à 699 pts
             </p>
           </div>
           <Link
             href="/dashboard/reading"
             className="mt-6 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-indigo-600 hover:text-indigo-700"
           >
-            <span>Catalogue des 40 tests</span>
+            <span>40 tests · Mode Examen & Révision</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -272,14 +309,14 @@ export default function DashboardOverviewPage() {
               Expression Écrite
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
-              113 sujets officiels · Correction IA instantanée
+              60 min · 3 tâches (T1, T2, T3) · 0 à 20 pts
             </p>
           </div>
           <Link
             href="/dashboard/writing"
             className="mt-6 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-emerald-600 hover:text-emerald-700"
           >
-            <span>Studio d'écriture</span>
+            <span>113 sujets · Correction IA Gratuite</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -299,14 +336,14 @@ export default function DashboardOverviewPage() {
               Expression Orale
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
-              3 épreuves interactives · Whisper & évaluation IA
+              12 à 15 min · 3 tâches (T1, T2, T3) · 0 à 20 pts
             </p>
           </div>
           <Link
             href="/dashboard/speaking"
             className="mt-6 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-rose-600 hover:text-rose-700"
           >
-            <span>Studio oral interactif</span>
+            <span>30 situations réelles · Whisper STT</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

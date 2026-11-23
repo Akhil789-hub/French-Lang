@@ -25,6 +25,7 @@ import { AiExplainerModal } from "@/components/AiExplainerModal";
 import { saveTestResult } from "@/lib/storage";
 import { getScoreDetails } from "@/lib/tcf-scoring";
 import { saveMistake } from "@/lib/mistakes";
+import { TcfRulesModal } from "@/components/TcfRulesModal";
 
 export function ListeningSimulator({ testId }: { testId: string }) {
   const searchParams = useSearchParams();
@@ -40,6 +41,7 @@ export function ListeningSimulator({ testId }: { testId: string }) {
   const [timeLeft, setTimeLeft] = useState(35 * 60);
   const [showTranscript, setShowTranscript] = useState(isReviewMode);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [rulesModalOpen, setRulesModalOpen] = useState(false);
 
   // Load from PostgreSQL backend
   useEffect(() => {
@@ -174,7 +176,14 @@ export function ListeningSimulator({ testId }: { testId: string }) {
           <ArrowLeft className="w-4 h-4" /> Retour aux 40 Tests
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setRulesModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
+          >
+            📋 Règles CO (35m)
+          </button>
+
           {isReviewMode ? (
             <div className="flex items-center gap-2 text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
               <BookOpen className="w-3.5 h-3.5 text-blue-500" />
@@ -471,6 +480,12 @@ export function ListeningSimulator({ testId }: { testId: string }) {
         preloadedExplanation={currentQ.explanation}
         preloadedTrapAlert={currentQ.trapAlert}
         testType="listening"
+      />
+
+      <TcfRulesModal
+        isOpen={rulesModalOpen}
+        onClose={() => setRulesModalOpen(false)}
+        defaultModule="listening"
       />
     </div>
   );

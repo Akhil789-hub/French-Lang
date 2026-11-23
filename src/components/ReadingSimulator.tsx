@@ -21,6 +21,7 @@ import { AiExplainerModal } from "@/components/AiExplainerModal";
 import { saveTestResult } from "@/lib/storage";
 import { getScoreDetails } from "@/lib/tcf-scoring";
 import { saveMistake } from "@/lib/mistakes";
+import { TcfRulesModal } from "@/components/TcfRulesModal";
 
 export function ReadingSimulator({ testId }: { testId: string }) {
   const searchParams = useSearchParams();
@@ -35,6 +36,7 @@ export function ReadingSimulator({ testId }: { testId: string }) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60 * 60);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [rulesModalOpen, setRulesModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadTest() {
@@ -166,7 +168,14 @@ export function ReadingSimulator({ testId }: { testId: string }) {
           <ArrowLeft className="w-4 h-4" /> Retour aux Tests de Lecture
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setRulesModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 transition"
+          >
+            📋 Règles CE (60m)
+          </button>
+
           {isReviewMode ? (
             <div className="flex items-center gap-2 text-xs font-mono font-bold px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900">
               <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
@@ -435,6 +444,12 @@ export function ReadingSimulator({ testId }: { testId: string }) {
         preloadedExplanation={currentQ.explanation}
         preloadedTrapAlert={currentQ.trapAlert}
         testType="reading"
+      />
+
+      <TcfRulesModal
+        isOpen={rulesModalOpen}
+        onClose={() => setRulesModalOpen(false)}
+        defaultModule="reading"
       />
     </div>
   );
